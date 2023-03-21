@@ -13,12 +13,6 @@ public class MyDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Username).IsRequired();
-            entity.Property(e => e.Email).IsRequired();
-            entity.Property(e => e.Password).IsRequired();
-        });
+        modelBuilder.Entity<User>();
     }
 }

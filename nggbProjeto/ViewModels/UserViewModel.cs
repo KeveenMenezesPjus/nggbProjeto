@@ -22,5 +22,4 @@ namespace nggbProjeto.ViewModels
         [Compare("Password", ErrorMessage = "A senha e a senha de confirmação não são iguais.")]
         public string ConfirmPassword { get; set; }
     }
-
 }
