@@ -1,0 +1,20 @@
+﻿<button type="button" class="btn btn-primary" onclick="carregarLogin()">Login</button>
+<button type="button" class="btn btn-success" onclick="carregarCadastro()">Cadastro</button>
+
+<div id="partialContainer"></div>
+
+<script>
+    function carregarLogin() {
+        var url = '@Url.Action("LoginPartial", "Autentificacao")';
+        $.get(url, function (data) {
+            $('#partialContainer').html(data);
+        });
+    }
+
+    function carregarCadastro() {
+        var url = '@Url.Action("CadastroPartial", "Autentificacao")';
+        $.get(url, function (data) {
+            $('#partialContainer').html(data);
+        });
+    }
+</script>
