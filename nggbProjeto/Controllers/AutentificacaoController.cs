@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.Text;
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using nggbProjeto.Models;
@@ -29,14 +32,25 @@ namespace nggbProjeto.Controllers
             return PartialView("_Cadastro");
         }
         [HttpPost]
-        public async Task<IActionResult> Cadastro(UserViewModel model) { 
+        public async Task<IActionResult> Cadastro(UserViewModel model)
+        {
             if (ModelState.IsValid)
             {
+                // Cria um hash da senha usando o algoritmo PBKDF2
+                var passwordHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                    password: model.Password,
+                    salt: Encoding.UTF8.GetBytes(model.Email), // Utilize um salt único para cada usuário, como o nome de usuário
+                    prf: KeyDerivationPrf.HMACSHA512,
+                    iterationCount: 10000,
+                    numBytesRequested: 256 / 8));
+
                 var user = new User
                 {
                     Username = model.Username,
                     Email = model.Email,
-                    Password = model.Password
+                    Password = passwordHash, // Salva o hash da senha no banco de dados
+                    TipoUser = Models.Enum.TipoUser.Usuario,
+                    DataAcesso = DateTime.Now,
                 };
 
                 _context.Users.Add(user);
@@ -49,6 +63,7 @@ namespace nggbProjeto.Controllers
         }
 
 
+
         public IActionResult LoginPartial()
         {
             return PartialView("_Login");
@@ -58,18 +73,35 @@ namespace nggbProjeto.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email && u.Password == model.Password);
+                // Obter o usuário com o e-mail fornecido
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
 
                 if (user != null)
                 {
-                    // Autenticação bem sucedida
-                    return RedirectToAction(nameof(Index));
+                    // Comparar a senha fornecida com o hash de senha do usuário
+                    var passwordHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                        password: model.Password,
+                        salt: Encoding.UTF8.GetBytes(user.Email),
+                        prf: KeyDerivationPrf.HMACSHA512,
+                        iterationCount: 10000,
+                        numBytesRequested: 256 / 8));
+
+                    if (user.Password == passwordHash)
+                    {
+                        user.DataAcesso = DateTime.Now;
+                        _context.Entry(user).State = EntityState.Modified;
+                        await _context.SaveChangesAsync();
+
+                        // Autenticação bem sucedida
+                        return RedirectToAction(nameof(Index));
+                    }
                 }
             }
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             return View("Index");
         }
+
 
     }
 }
