@@ -39,7 +39,7 @@ namespace nggbProjeto.Controllers
                 // Cria um hash da senha usando o algoritmo PBKDF2
                 var passwordHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
                     password: model.Password,
-                    salt: Encoding.UTF8.GetBytes(model.Email), // Utilize um salt único para cada usuário, como o nome de usuário
+                    salt: Encoding.UTF8.GetBytes(model.Username), // Utilize um salt único para cada usuário, como o nomedeusuário
                     prf: KeyDerivationPrf.HMACSHA512,
                     iterationCount: 10000,
                     numBytesRequested: 256 / 8));
@@ -63,8 +63,7 @@ namespace nggbProjeto.Controllers
         }
 
 
-
-        public IActionResult LoginPartial()
+        public PartialViewResult LoginPartial()
         {
             return PartialView("_Login");
         }
@@ -78,10 +77,9 @@ namespace nggbProjeto.Controllers
 
                 if (user != null)
                 {
-                    // Comparar a senha fornecida com o hash de senha do usuário
                     var passwordHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
                         password: model.Password,
-                        salt: Encoding.UTF8.GetBytes(user.Email),
+                        salt: Encoding.UTF8.GetBytes(user.Username),
                         prf: KeyDerivationPrf.HMACSHA512,
                         iterationCount: 10000,
                         numBytesRequested: 256 / 8));
@@ -93,7 +91,7 @@ namespace nggbProjeto.Controllers
                         await _context.SaveChangesAsync();
 
                         // Autenticação bem sucedida
-                        return RedirectToAction(nameof(Index));
+                        return RedirectToAction("Index", "Feed");
                     }
                 }
             }
@@ -101,7 +99,5 @@ namespace nggbProjeto.Controllers
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             return View("Index");
         }
-
-
     }
 }
